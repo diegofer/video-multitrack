@@ -1,0 +1,30 @@
+# Ignore log files
+*.log
+
+
+*.wav
+*.ogg
+*.mp4
+
+venv/
+separated/
+
+# Ignore build directories
+dist/
+build/
+
+# Ignore environment variable files
+.env
+.env.local
+
+# Ignore temporary files
+*.tmp
+*.temp
+
+# Ignore IDE specific files
+.vscode/
+.idea/
+
+# Ignore OS generated files
+.DS_Store
+Thumbs.db
