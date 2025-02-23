@@ -86,7 +86,7 @@ for i, stem in enumerate(stem_names):
 
 # Convertir el audio extraído del video a OGG
 output_extracted_ogg = os.path.join(output_folder, "full.ogg")
-cmd = [ffmpeg_path, "-i", output_wav, "-c:a", "libvorbis", output_extracted_ogg, "-y"]
+cmd = [ffmpeg_path, "-i", output_wav, "-c:a", "libvorbis", "-q:a", "10", output_extracted_ogg, "-y"]
 subprocess.run(cmd, check=True)
 print(f"Convertido a OGG: {output_extracted_ogg}")
 
