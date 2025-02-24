@@ -1,6 +1,5 @@
 from PySide6.QtCore import QThread, Signal
 import os
-import sys
 import torchaudio
 import torch
 import soundfile as sf
@@ -9,7 +8,9 @@ from demucs.pretrained import get_model
 from pathlib import Path
 import subprocess
 import unicodedata
-
+import requests
+import zipfile
+import shutil
 
 class TracksExtractThread(QThread):
     result = Signal(list)
@@ -21,11 +22,15 @@ class TracksExtractThread(QThread):
     def run(self):
         self.process_video(self.video_path)
 
-    def process_video(self, input_mp4):
-        output_base_folder = "library"
+    def process_video(self, input_mp4_path):
         
         def get_ffmpeg_path():
-            return "ffmpeg"  # Asume que ffmpeg está en el PATH del sistema
+            ffmpeg_path = shutil.which("ffmpeg")
+            if ffmpeg_path:
+                return ffmpeg_path
+            else:
+                return self.download_ffmpeg()
+        
         
         def delete_wav_files(folder):
             for file in os.listdir(folder):
@@ -37,15 +42,15 @@ class TracksExtractThread(QThread):
             nfkd_form = unicodedata.normalize('NFKD', filename)
             return "".join([c for c in nfkd_form if not unicodedata.combining(c)]).upper()
         
-        output_folder_name = normalize_filename(os.path.splitext(input_mp4)[0])
-        output_folder = os.path.join(output_base_folder, output_folder_name)
+        output_folder_name = normalize_filename(os.path.splitext(input_mp4_path)[0])
+        output_folder = os.path.join(output_folder_name)
         Path(output_folder).mkdir(parents=True, exist_ok=True)
-        
+        print("OUTPUT FOLDER", output_folder)
         output_wav = os.path.join(output_folder, "extracted_audio.wav")
         
         print("Extrayendo audio del archivo MP4...")
         ffmpeg_path = get_ffmpeg_path()
-        cmd = [ffmpeg_path, "-i", input_mp4, "-vn", "-acodec", "pcm_s16le", "-ar", "44100", output_wav]
+        cmd = [ffmpeg_path, "-i", input_mp4_path, "-vn", "-acodec", "pcm_s16le", "-ar", "44100", output_wav, "-y"]
         subprocess.run(cmd, check=True)
         
         print("Cargando modelo Demucs...")
@@ -87,4 +92,25 @@ class TracksExtractThread(QThread):
         
         delete_wav_files(output_folder)
         
-        print("Proceso finalizado.")
+        self.result.emit(["Proceso finalizado."])
+        self.quit()
+
+    def download_ffmpeg(self):
+        url = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
+        local_zip = "ffmpeg.zip"
+        local_dir = "ffmpeg"
+        
+        print("Descargando ffmpeg...")
+        response = requests.get(url)
+        with open(local_zip, "wb") as file:
+            file.write(response.content)
+        
+        print("Descomprimiendo ffmpeg...")
+        with zipfile.ZipFile(local_zip, "r") as zip_ref:
+            zip_ref.extractall(local_dir)
+        
+        os.remove(local_zip)
+        
+        bin_dir = os.path.join(local_dir, "ffmpeg-*-essentials_build", "bin")
+        ffmpeg_exe = os.path.join(bin_dir, "ffmpeg.exe")
+        return ffmpeg_exe

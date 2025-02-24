@@ -6,7 +6,7 @@ from extract import TracksExtractThread
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Arrastrar y Soltar Video")
+        self.setWindowTitle("Video a Multitrack")
         self.setGeometry(100, 100, 600, 400)
         self.label = QLabel("Arrastra y suelta el archivo .mp4 aquí", self)
         self.label.setAlignment(Qt.AlignCenter)
@@ -38,8 +38,8 @@ class MainWindow(QMainWindow):
         self.extract_thread.result.connect(self.on_extracted)
         self.extract_thread.start()
 
-    def on_extracted():
-        print("Terminado y podemos Seguir con metadatos")
+    def on_extracted(self, msg):
+        print(msg)
 
 
 if __name__ == "__main__":
