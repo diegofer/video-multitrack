@@ -8,9 +8,7 @@ from demucs.pretrained import get_model
 from pathlib import Path
 import subprocess
 import unicodedata
-import requests
-import zipfile
-import shutil
+from ffmpeg_manager import FFmpegManager
 
 class TracksExtractThread(QThread):
     result = Signal(list)
@@ -22,15 +20,7 @@ class TracksExtractThread(QThread):
     def run(self):
         self.process_video(self.video_path)
 
-    def process_video(self, input_mp4_path):
-        
-        def get_ffmpeg_path():
-            ffmpeg_path = shutil.which("ffmpeg")
-            if ffmpeg_path:
-                return ffmpeg_path
-            else:
-                return self.download_ffmpeg()
-        
+    def process_video(self, input_mp4_path):      
         
         def delete_wav_files(folder):
             for file in os.listdir(folder):
@@ -49,7 +39,8 @@ class TracksExtractThread(QThread):
         output_wav = os.path.join(output_folder, "extracted_audio.wav")
         
         print("Extrayendo audio del archivo MP4...")
-        ffmpeg_path = get_ffmpeg_path()
+        ffmpeg_manager = FFmpegManager()
+        ffmpeg_path = ffmpeg_manager.get_ffmpeg_path()
         cmd = [ffmpeg_path, "-i", input_mp4_path, "-vn", "-acodec", "pcm_s16le", "-ar", "44100", output_wav, "-y"]
         subprocess.run(cmd, check=True)
         
@@ -94,23 +85,3 @@ class TracksExtractThread(QThread):
         
         self.result.emit(["Proceso finalizado."])
         self.quit()
-
-    def download_ffmpeg(self):
-        url = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
-        local_zip = "ffmpeg.zip"
-        local_dir = "ffmpeg"
-        
-        print("Descargando ffmpeg...")
-        response = requests.get(url)
-        with open(local_zip, "wb") as file:
-            file.write(response.content)
-        
-        print("Descomprimiendo ffmpeg...")
-        with zipfile.ZipFile(local_zip, "r") as zip_ref:
-            zip_ref.extractall(local_dir)
-        
-        os.remove(local_zip)
-        
-        bin_dir = os.path.join(local_dir, "ffmpeg-*-essentials_build", "bin")
-        ffmpeg_exe = os.path.join(bin_dir, "ffmpeg.exe")
-        return ffmpeg_exe
