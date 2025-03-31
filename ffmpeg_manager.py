@@ -4,6 +4,7 @@ import platform
 import urllib.request
 import zipfile
 import tarfile
+import sys
 
 class FFmpegManager:
     def __init__(self):
@@ -40,7 +41,7 @@ class FFmpegManager:
             with zipfile.ZipFile(zip_path, 'r') as zip_ref:
                 zip_ref.extractall(extract_path)
 
-            bin_path = os.path.join(os.getcwd(), extract_path, "bin")
+            bin_path = os.path.join(get_base_path(), extract_path, "ffmpeg-*-essentials_build", "bin")
             os.environ["PATH"] += os.pathsep + bin_path
             ffmpeg_exe_path = os.path.join(bin_path, "ffmpeg.exe")
 
@@ -86,4 +87,9 @@ class FFmpegManager:
     def get_ffmpeg_path(self):
         """Devuelve la ruta a ffmpeg.exe."""
         return self.ffmpeg_path
+
+def get_base_path():
+    if getattr(sys, 'frozen', False):  # Si está congelado con PyInstaller
+        return os.path.dirname(sys.executable)
+    return os.getcwd()  # Si se ejecuta como script normal
 
